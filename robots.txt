@@ -1,0 +1,12 @@
+# robots.txt для V2Raytun
+User-agent: *
+Allow: /
+
+# Разрешаем индексацию основных страниц
+Allow: /index.html
+
+# Sitemap
+Sitemap: https://v2raytun.beer/sitemap.xml
+
+# Crawl-delay для вежливости
+Crawl-delay: 1
