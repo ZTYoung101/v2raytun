@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Проверка доступа</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <meta name="color-scheme" content="dark">
+  <style>
+    /* Чтобы оверлей выглядел аккуратно на пустой странице */
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: #0d1117;
+      color: #ffffff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= КАПЧА-ОВЕРЛЕЙ (как у тебя было) ================= -->
+  <div id="captchaOverlay" style="
+    position: fixed;
+    inset: 0;
+    background-color: #0d1117;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  ">
+    <h2 style="margin-bottom: 20px; font-weight: 600; line-height: 1.3;">
+      Подтвердите, что вы человек.<br>
+      Найдите изображение, совпадающее с перевёрнутым флагом ниже:
+    </h2>
+    <div id="flagTarget" style="margin-bottom: 20px;"></div>
+    <p style="margin-bottom: 10px;">Доступные варианты:</p>
+    <div id="flagOptions" style="display:flex; gap:15px; margin-top:10px; flex-wrap:wrap; justify-content:center;"></div>
+    <noscript style="margin-top:18px; opacity:.8;">Чтобы продолжить, включите JavaScript.</noscript>
+  </div>
+  <!-- =================================================================== -->
+
+  <!-- ================= СКРИПТ КАПЧИ (как у тебя, с минимальной правкой успеха) ================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Список флагов (положи файлы в assets/flags/)
+      const flags = [
+        { name: "canada", src: "assets/flags/canada.png" },
+        { name: "uk", src: "assets/flags/uk.png" },
+        { name: "moldova", src: "assets/flags/moldova.png" },
+        { name: "south_korea", src: "assets/flags/south_korea.png" },
+        { name: "japan", src: "assets/flags/japan.png" },
+        { name: "germany", src: "assets/flags/germany.png" }
+      ];
+
+      const overlay = document.getElementById("captchaOverlay");
+      const target = document.getElementById("flagTarget");
+      const options = document.getElementById("flagOptions");
+
+      // Выбираем правильный флаг и показываем его перевёрнутым
+      const correctFlag = flags[Math.floor(Math.random() * flags.length)];
+      const flipped = document.createElement("img");
+      flipped.src = correctFlag.src;
+      flipped.width = 96;
+      flipped.height = 64;
+      flipped.alt = "Образец флага";
+      flipped.style.transform = "rotate(180deg)";
+      flipped.style.border = "2px solid #ffffff";
+      flipped.style.borderRadius = "8px";
+      target.appendChild(flipped);
+
+      // Перемешиваем варианты
+      const shuffled = [...flags].sort(() => Math.random() - 0.5);
+
+      // Рендерим варианты
+      shuffled.forEach(flag => {
+        const img = document.createElement("img");
+        img.src = flag.src;
+        img.width = 64;
+        img.height = 42;
+        img.alt = "Вариант флага";
+        img.style.cursor = "pointer";
+        img.style.borderRadius = "6px";
+        img.style.transition = "transform 0.2s, border 0.2s";
+        img.style.border = "2px solid transparent";
+
+        img.onmouseover = () => { img.style.transform = "scale(1.1)"; };
+        img.onmouseout  = () => { img.style.transform = "scale(1)"; };
+
+        img.onclick = () => {
+          if (flag.name === correctFlag.name) {
+            // === ДОБАВЛЕНО ПО ТЗ: кука на 24 часа и возврат на исходный URL ===
+            const expires = new Date(Date.now() + 24*60*60*1000).toUTCString();
+            document.cookie = "v2rt_human=1; path=/; expires=" + expires + "; SameSite=Lax";
+
+            // back= (URL-encoded) → вернуть туда; иначе на главную
+            const params = new URLSearchParams(location.search);
+            const backRaw = params.get('back');
+            const back = backRaw ? decodeURIComponent(backRaw) :
+              (location.protocol === 'file:' ? 'index.html' : '/');
+
+            location.href = back;
+            // ===============================================================
+          } else {
+            // Ошибка: краткая подсветка
+            img.style.border = "2px solid red";
+            setTimeout(() => { img.style.border = "2px solid transparent"; }, 600);
+          }
+        };
+
+        options.appendChild(img);
+      });
+
+      // Пока капча не пройдена - блокируем прокрутку сайта
+      document.body.style.overflow = "hidden";
+    });
+  </script>
+</body>
+</html>
